@@ -7,11 +7,16 @@ FIRST_KEYWORDS = [
     "during your standby phase",
     "during each of your standby phases",
     "if this card is activated",
-    "add 1",
-    "set 1",
+    "add",
+    "set",
     "field zone",
     "if you control no monsters",
     "you can only activate 1",
+    "draw"
+    "special summon"
+    "search"
+    "sent to GY"
+    "sent to the graveyard"
 ]
 
 SECOND_KEYWORDS = [
@@ -21,6 +26,9 @@ SECOND_KEYWORDS = [
     "your opponent controls",
     "opponent's turn",
     "quick effect",
+    "destroy"
+    "negate"
+    "banish"
 ]
 
 TAG_PATTERNS = {
@@ -28,6 +36,7 @@ TAG_PATTERNS = {
     "destroy": ["destroy", "destroyed"],
     "draw": ["draw"],
     "banish": ["banish", "banished"],
+    "special summon": ["special summon"]
 }
 
 

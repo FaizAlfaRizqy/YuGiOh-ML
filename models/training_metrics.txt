@@ -5,29 +5,30 @@ Rows setelah deduplikasi (nama + efek sama): 13257
 === Logistic Regression: First vs Second ===
 Train size: 10605
 Test size: 2652
-Accuracy: 0.8499
+Accuracy: 0.8533
               precision    recall  f1-score   support
 
-       first     0.8085    0.9756    0.8842      1558
-      second     0.9508    0.6709    0.7867      1094
+       first     0.8237    0.9701    0.8909      1637
+      second     0.9323    0.6650    0.7763      1015
 
-    accuracy                         0.8499      2652
-   macro avg     0.8796    0.8233    0.8355      2652
-weighted avg     0.8672    0.8499    0.8440      2652
+    accuracy                         0.8533      2652
+   macro avg     0.8780    0.8175    0.8336      2652
+weighted avg     0.8652    0.8533    0.8470      2652
 
 
 === SVM: Effect Tag Classification ===
 Train size: 10605
 Test size: 2652
-Accuracy: 0.7428
-              precision    recall  f1-score   support
+Accuracy: 0.6640
+                precision    recall  f1-score   support
 
-      banish     0.9306    0.5050    0.6547       398
-     destroy     0.9577    0.6177    0.7510       769
-        draw     0.9167    0.4435    0.5978       124
-      negate     0.9263    0.4190    0.5770       210
-       other     0.6448    1.0000    0.7841      1151
+        banish     0.8242    0.3205    0.4615       234
+       destroy     0.8563    0.5197    0.6468       585
+          draw     0.8889    0.2609    0.4034        92
+        negate     0.7250    0.2164    0.3333       134
+         other     0.4722    0.9864    0.6386       662
+special summon     0.8942    0.7153    0.7948       945
 
-    accuracy                         0.7428      2652
-   macro avg     0.8752    0.5971    0.6729      2652
-weighted avg     0.8134    0.7428    0.7300      2652
+      accuracy                         0.6640      2652
+     macro avg     0.7768    0.5032    0.5464      2652
+  weighted avg     0.7656    0.6640    0.6569      2652
