@@ -2,10 +2,12 @@
 Rows awal: 40792
 Rows setelah deduplikasi (nama + efek sama): 13257
 
-=== Logistic Regression: First vs Second ===
-Train size: 10605
-Test size: 2652
-Accuracy: 0.8533
+=== Logistic Regression: First vs Second (5-Fold CV) ===
+Total samples: 13257
+K-Fold scores: ['0.8480', '0.8624', '0.8453', '0.8514', '0.8521']
+Mean Accuracy (CV): 0.8519 (+/- 0.0058)
+
+Classification Report (on 80/20 split for reference):
               precision    recall  f1-score   support
 
        first     0.8237    0.9701    0.8909      1637
@@ -16,10 +18,12 @@ Accuracy: 0.8533
 weighted avg     0.8652    0.8533    0.8470      2652
 
 
-=== SVM: Effect Tag Classification ===
-Train size: 10605
-Test size: 2652
-Accuracy: 0.6640
+=== SVM: Effect Tag Classification (5-Fold CV) ===
+Total samples: 13257
+K-Fold scores: ['0.6674', '0.6753', '0.6443', '0.6669', '0.6684']
+Mean Accuracy (CV): 0.6645 (+/- 0.0105)
+
+Classification Report (on 80/20 split for reference):
                 precision    recall  f1-score   support
 
         banish     0.8242    0.3205    0.4615       234

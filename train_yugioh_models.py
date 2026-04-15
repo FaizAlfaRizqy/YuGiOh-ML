@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
 
@@ -20,19 +20,15 @@ from preprocess_yugioh import (
 )
 
 
-def train_logistic_first_second(df: pd.DataFrame, random_state: int = 42) -> dict:
+def train_logistic_first_second(df: pd.DataFrame, random_state: int = 42, n_splits: int = 5) -> dict:
     data = df.copy()
     data["first_second_label"] = data["description"].apply(infer_first_second_label)
     data["combined_text"] = make_combined_text(data)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        data["combined_text"],
-        data["first_second_label"],
-        test_size=0.2,
-        random_state=random_state,
-        stratify=data["first_second_label"],
-    )
+    X = data["combined_text"]
+    y = data["first_second_label"]
 
+    # Build pipeline
     model = Pipeline(
         steps=[
             ("tfidf", TfidfVectorizer(max_features=30000, ngram_range=(1, 2))),
@@ -40,53 +36,81 @@ def train_logistic_first_second(df: pd.DataFrame, random_state: int = 42) -> dic
         ]
     )
 
-    model.fit(X_train, y_train)
-    preds = model.predict(X_test)
+    # K-Fold Cross Validation
+    kfold = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    cv_scores = cross_val_score(model, X, y, cv=kfold, scoring="accuracy")
 
+    # Train final model on entire dataset
+    model.fit(X, y)
+
+    # For final report, do a simple train-test split for detailed classification report
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=random_state, stratify=y
+    )
+    model_for_report = Pipeline(
+        steps=[
+            ("tfidf", TfidfVectorizer(max_features=30000, ngram_range=(1, 2))),
+            ("clf", LogisticRegression(max_iter=1200, class_weight="balanced")),
+        ]
+    )
+    model_for_report.fit(X_train, y_train)
+    preds = model_for_report.predict(X_test)
     report = classification_report(y_test, preds, digits=4)
-    acc = accuracy_score(y_test, preds)
 
     return {
         "model": model,
-        "accuracy": acc,
+        "cv_scores": cv_scores,
+        "cv_mean": cv_scores.mean(),
+        "cv_std": cv_scores.std(),
         "report": report,
-        "train_size": len(X_train),
-        "test_size": len(X_test),
+        "total_samples": len(X),
     }
 
 
-def train_svm_effect_tag(df: pd.DataFrame, random_state: int = 42) -> dict:
+def train_svm_effect_tag(df: pd.DataFrame, random_state: int = 42, n_splits: int = 5) -> dict:
     data = df.copy()
     data["effect_tag"] = data["description"].apply(infer_effect_tag)
     data["combined_text"] = make_combined_text(data)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        data["combined_text"],
-        data["effect_tag"],
-        test_size=0.2,
-        random_state=random_state,
-        stratify=data["effect_tag"],
-    )
+    X = data["combined_text"]
+    y = data["effect_tag"]
 
+    # Build pipeline
     model = Pipeline(
         steps=[
             ("tfidf", TfidfVectorizer(max_features=40000, ngram_range=(1, 2))),
-            ("clf", LinearSVC()),
+            ("clf", LinearSVC(max_iter=2000)),
         ]
     )
 
-    model.fit(X_train, y_train)
-    preds = model.predict(X_test)
+    # K-Fold Cross Validation
+    kfold = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    cv_scores = cross_val_score(model, X, y, cv=kfold, scoring="accuracy")
 
+    # Train final model on entire dataset
+    model.fit(X, y)
+
+    # For final report, do a simple train-test split for detailed classification report
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=random_state, stratify=y
+    )
+    model_for_report = Pipeline(
+        steps=[
+            ("tfidf", TfidfVectorizer(max_features=40000, ngram_range=(1, 2))),
+            ("clf", LinearSVC(max_iter=2000)),
+        ]
+    )
+    model_for_report.fit(X_train, y_train)
+    preds = model_for_report.predict(X_test)
     report = classification_report(y_test, preds, digits=4)
-    acc = accuracy_score(y_test, preds)
 
     return {
         "model": model,
-        "accuracy": acc,
+        "cv_scores": cv_scores,
+        "cv_mean": cv_scores.mean(),
+        "cv_std": cv_scores.std(),
         "report": report,
-        "train_size": len(X_train),
-        "test_size": len(X_test),
+        "total_samples": len(X),
     }
 
 
@@ -133,17 +157,21 @@ def main() -> None:
     metrics_text.append(f"Rows setelah deduplikasi (nama + efek sama): {after}")
     metrics_text.append("")
 
-    metrics_text.append("=== Logistic Regression: First vs Second ===")
-    metrics_text.append(f"Train size: {lr_result['train_size']}")
-    metrics_text.append(f"Test size: {lr_result['test_size']}")
-    metrics_text.append(f"Accuracy: {lr_result['accuracy']:.4f}")
+    metrics_text.append("=== Logistic Regression: First vs Second (5-Fold CV) ===")
+    metrics_text.append(f"Total samples: {lr_result['total_samples']}")
+    metrics_text.append(f"K-Fold scores: {[f'{s:.4f}' for s in lr_result['cv_scores']]}")
+    metrics_text.append(f"Mean Accuracy (CV): {lr_result['cv_mean']:.4f} (+/- {lr_result['cv_std']:.4f})")
+    metrics_text.append("")
+    metrics_text.append("Classification Report (on 80/20 split for reference):")
     metrics_text.append(lr_result["report"])
     metrics_text.append("")
 
-    metrics_text.append("=== SVM: Effect Tag Classification ===")
-    metrics_text.append(f"Train size: {svm_result['train_size']}")
-    metrics_text.append(f"Test size: {svm_result['test_size']}")
-    metrics_text.append(f"Accuracy: {svm_result['accuracy']:.4f}")
+    metrics_text.append("=== SVM: Effect Tag Classification (5-Fold CV) ===")
+    metrics_text.append(f"Total samples: {svm_result['total_samples']}")
+    metrics_text.append(f"K-Fold scores: {[f'{s:.4f}' for s in svm_result['cv_scores']]}")
+    metrics_text.append(f"Mean Accuracy (CV): {svm_result['cv_mean']:.4f} (+/- {svm_result['cv_std']:.4f})")
+    metrics_text.append("")
+    metrics_text.append("Classification Report (on 80/20 split for reference):")
     metrics_text.append(svm_result["report"])
 
     metrics_output = "\n".join(metrics_text)
